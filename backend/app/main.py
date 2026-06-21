@@ -8,13 +8,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.dependencies import load_rag_service_into_state
 from app.utils.logging import configure_logging
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
-    # Initialize dependencies lazily on first request to avoid slow startup.
+async def lifespan(app: FastAPI):
+    # Startup: load RAGService once from persisted Qdrant index (don't rebuild)
+    load_rag_service_into_state(app)
     yield
+    # Shutdown: cleanup (optional)
 
 
 def create_app() -> FastAPI:

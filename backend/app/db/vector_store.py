@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from app.auth.roles import ROLE_COLLECTIONS
+from app.core.index_status import is_index_ready
 from app.embeddings.interfaces import DenseEmbedder, SparseEmbedder
 from app.ingestion.docling_ingestor import DoclingIngestor
 from app.models.chunk import Chunk, ChunkMetadata
@@ -48,6 +49,16 @@ class VectorStoreClient:
             self._ready = True
             return
 
+        # Align load behavior with the same readiness marker used by dependencies.
+        if not self._reset_index_on_connect and is_index_ready(self._qdrant_path):
+            if self._connect_to_existing_langchain_hybrid():
+                self._ready = True
+                return
+            elif self._connect_to_existing_legacy_qdrant():
+                self._ready = True
+                return
+
+        # Only load chunks when doing a fresh build
         self._chunks = self._load_chunks()
 
         # Full reset should only happen for explicit ingestion runs, not API request-time connect.
@@ -68,6 +79,61 @@ class VectorStoreClient:
         logger.info("Falling back to legacy Qdrant ingestion path")
         self._connect_legacy_qdrant()
         self._ready = True
+
+    def _connect_to_existing_langchain_hybrid(self) -> bool:
+        """Connect to an existing LangChain Qdrant index without re-ingesting."""
+        try:
+            from langchain_huggingface import HuggingFaceEmbeddings
+            from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
+        except ImportError:
+            return False
+
+        try:
+            embed_model = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+            dense_embeddings = HuggingFaceEmbeddings(
+                model_name=embed_model,
+                model_kwargs={"device": "cpu"},
+                encode_kwargs={"normalize_embeddings": True},
+            )
+            sparse_embeddings = FastEmbedSparse(model_name="Qdrant/bm25", batch_size=32)
+
+            # Use path-based connection instead of passing a local client object.
+            # This avoids serializing/pickling a sqlite3-backed client in runtime flows.
+            self._langchain_vectorstore = QdrantVectorStore.from_existing_collection(
+                collection_name=self._collection_name,
+                path=str(self._qdrant_path),
+                embedding=dense_embeddings,
+                sparse_embedding=sparse_embeddings,
+                vector_name="dense",
+                sparse_vector_name="sparse",
+                retrieval_mode=RetrievalMode.HYBRID,
+            )
+            logger.info("Connected to existing LangChain Qdrant index at %s", self._qdrant_path)
+            self._client = None
+            self._chunks = []  # Load on-demand if needed
+            return True
+        except Exception as exc:
+            logger.debug("Could not connect to existing LangChain index: %s", exc)
+            return False
+
+    def _connect_to_existing_legacy_qdrant(self) -> bool:
+        """Connect to an existing legacy Qdrant index."""
+        try:
+            from qdrant_client import QdrantClient
+        except ImportError:
+            return False
+
+        try:
+            self._client = QdrantClient(path=str(self._qdrant_path))
+            # Verify collection exists
+            self._client.get_collection(self._collection_name)
+            logger.info("Connected to existing legacy Qdrant index at %s", self._qdrant_path)
+            self._chunks = []  # Load on-demand if needed
+            return True
+        except Exception as exc:
+            logger.debug("Could not connect to existing legacy index: %s", exc)
+            self._client = None
+            return False
 
     def _connect_langchain_hybrid(self) -> bool:
         try:
@@ -250,25 +316,20 @@ class VectorStoreClient:
         if self._langchain_vectorstore is None:
             return None
 
-        from qdrant_client import models
-
-        query_filter = models.Filter(
-            must=[
-                models.FieldCondition(
-                    key="access_roles",
-                    match=models.MatchAny(any=[role]),
-                ),
-                models.FieldCondition(
-                    key="collection",
-                    match=models.MatchAny(any=sorted(allowed_collections)),
-                ),
-            ]
-        )
-        retriever = self._langchain_vectorstore.as_retriever(
-            search_kwargs={"k": top_k, "filter": query_filter}
-        )
+        # LangChain's HYBRID retrieval mode doesn't properly support Qdrant filters.
+        # Workaround: retrieve MORE results without filter, then filter manually.
+        retriever = self._langchain_vectorstore.as_retriever(search_kwargs={"k": max(100, top_k * 5)})
         docs = retriever.invoke(query)
-        return [self._chunk_from_langchain_doc(doc, idx) for idx, doc in enumerate(docs)]
+
+        # Filter by role and collection
+        filtered_docs = [
+            doc
+            for doc in docs
+            if role in doc.metadata.get("access_roles", []) and doc.metadata.get("collection") in allowed_collections
+        ]
+
+        # Return top_k after filtering
+        return [self._chunk_from_langchain_doc(doc, idx) for idx, doc in enumerate(filtered_docs[:top_k])]
 
     def is_ready(self) -> bool:
         return self._ready

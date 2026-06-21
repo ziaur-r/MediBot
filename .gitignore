@@ -24,3 +24,6 @@ Thumbs.db
 !backend/.env.local.example
 backend/.env.local
 
+copilot-instructions.md
+backend/.qadrant
+backend/.qadrant_ingest

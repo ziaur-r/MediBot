@@ -28,8 +28,27 @@ export type CollectionsResponse = {
   collections: string[];
 };
 
+export type AdminIndexStatus = {
+  index_ready: boolean;
+  service_loaded: boolean;
+  build_in_progress: boolean;
+};
+
+export type AdminBuildResponse = {
+  status: string;
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+
+async function throwWithApiMessage(response: Response, fallback: string): Promise<never> {
+  try {
+    const payload = (await response.json()) as { detail?: string; message?: string };
+    throw new Error(payload.detail || payload.message || fallback);
+  } catch {
+    throw new Error(fallback);
+  }
+}
 
 export async function login(username: string): Promise<LoginResponse> {
   const response = await fetch(`${API_BASE_URL}/login`, {
@@ -41,7 +60,7 @@ export async function login(username: string): Promise<LoginResponse> {
   });
 
   if (!response.ok) {
-    throw new Error("Login failed");
+    await throwWithApiMessage(response, "Login failed");
   }
 
   return response.json();
@@ -56,7 +75,7 @@ export async function getCollections(role: Role, token: string): Promise<Collect
   });
 
   if (!response.ok) {
-    throw new Error("Failed to load collections");
+    await throwWithApiMessage(response, "Failed to load collections");
   }
 
   return response.json();
@@ -73,7 +92,37 @@ export async function askQuestion(question: string, token: string): Promise<Chat
   });
 
   if (!response.ok) {
-    throw new Error("Backend request failed");
+    await throwWithApiMessage(response, "Backend request failed");
+  }
+
+  return response.json();
+}
+
+export async function getAdminIndexStatus(token: string): Promise<AdminIndexStatus> {
+  const response = await fetch(`${API_BASE_URL}/admin/rag/status`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    await throwWithApiMessage(response, "Failed to load indexing status");
+  }
+
+  return response.json();
+}
+
+export async function runAdminReindex(token: string): Promise<AdminBuildResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/rag/build`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    await throwWithApiMessage(response, "Failed to start re-indexing");
   }
 
   return response.json();

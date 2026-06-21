@@ -85,3 +85,34 @@ main {
 .sources-list {
   padding-left: 1rem;
 }
+
+.admin-index-panel {
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-index-panel h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.admin-index-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.admin-index-actions button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  background: #17386a;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.admin-index-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
