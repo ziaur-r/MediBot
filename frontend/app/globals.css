@@ -1,0 +1,87 @@
+:root {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #1c2333;
+  --muted: #5f6b85;
+  --accent: #1463ff;
+  --border: #d9deea;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at top right, #dff4ff 0%, var(--bg) 45%);
+  color: var(--text);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100%;
+}
+
+main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem;
+  box-shadow: 0 10px 30px rgba(22, 35, 60, 0.08);
+}
+
+.chat-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  background: #f9fbff;
+}
+
+.login-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.login-row select {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem;
+}
+
+.login-row button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  background: #17386a;
+  color: #ffffff;
+}
+
+.badge {
+  display: inline-block;
+  margin-top: 0.6rem;
+  background: #e6efff;
+  color: #17386a;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.sources-list {
+  padding-left: 1rem;
+}

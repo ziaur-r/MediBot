@@ -1,0 +1,58 @@
+flowchart TB
+    subgraph Frontend["Frontend (Next.js)"]
+        UI["React UI\n(ChatBox.tsx)"]
+        API_LIB["lib/api.ts"]
+    end
+
+    subgraph Backend["Backend (FastAPI  /api/v1)"]
+        direction TB
+        LOGIN["/login\nJWT Auth"]
+        CHAT["/chat\nRBAC protected"]
+        HEALTH["/health"]
+        COLLECTIONS["/collections/{role}"]
+
+        subgraph Core["Core Services"]
+            RAG["RAGService\nroutes intent"]
+            LANG_CHAIN["LangChainHybridQAChain\n(primary path)"]
+            LLM["LLMClient\nGroq API"]
+            SQL_CHAIN["SQLRAGChain\n(analytics intent)"]
+        end
+
+        subgraph Retrieval["Retrieval Layer"]
+            HYBRID["InMemoryHybridRetriever\nDense + BM25 Sparse"]
+            RERANKER["LexicalCrossEncoderReranker"]
+            RBAC["RBAC Filter\nrole + collection"]
+        end
+
+        subgraph Storage["Storage"]
+            QDRANT["Qdrant Vector Store\n(384-dim HuggingFace)"]
+            SQLITE["SQLite DB\n(structured data)"]
+        end
+
+        subgraph Ingestion["Ingestion Pipeline"]
+            DOCLING["DoclingIngestor\n(PDF/docs → chunks)"]
+            EMBED["HuggingFaceEmbedder\nall-MiniLM-L6-v2"]
+        end
+    end
+
+    GROQ["Groq LLM API\n(external)"]
+
+    UI --> API_LIB
+    API_LIB -->|"POST /login"| LOGIN
+    API_LIB -->|"POST /chat + JWT"| CHAT
+
+    LOGIN -->|"JWT token + role"| UI
+
+    CHAT --> RAG
+    RAG -->|"SQL intent"| SQL_CHAIN
+    RAG -->|"hybrid intent"| LANG_CHAIN
+    LANG_CHAIN -->|"fallback"| HYBRID
+    HYBRID --> RBAC
+    RBAC --> QDRANT
+    HYBRID --> RERANKER
+    LANG_CHAIN --> LLM
+    SQL_CHAIN --> SQLITE
+    SQL_CHAIN --> LLM
+    LLM --> GROQ
+
+    DOCLING --> EMBED --> QDRANT
