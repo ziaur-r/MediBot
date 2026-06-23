@@ -60,28 +60,27 @@ class LangChainHybridQAChain:
             from langchain.chains.combine_documents import create_stuff_documents_chain
             from langchain_core.prompts import ChatPromptTemplate
             from langchain_groq import ChatGroq
-            from qdrant_client import models
         except ImportError:
             logger.info("LangChain/Groq imports unavailable at runtime; using fallback RAG path")
             return None
 
         allowed_collections = set(ROLE_COLLECTIONS[role])
-        query_filter = models.Filter(
-            must=[
-                models.FieldCondition(
-                    key="access_roles",
-                    match=models.MatchAny(any=[role.value]),
-                ),
-                models.FieldCondition(
-                    key="collection",
-                    match=models.MatchAny(any=sorted(allowed_collections)),
-                ),
-            ]
-        )
 
+        # LangChain's HYBRID retrieval mode doesn't properly support Qdrant filters.
+        # Workaround: retrieve MORE results without filter, then filter manually.
         retriever = self._vector_store.langchain_vectorstore.as_retriever(
-            search_kwargs={"k": top_k, "filter": query_filter}
+            search_kwargs={"k": max(100, top_k * 5)}
         )
+        
+        def filtered_retriever(query: str) -> list:
+            """Wrapper that retrieves documents and filters by role/collection."""
+            docs = retriever.invoke(query)
+            filtered = [
+                doc for doc in docs
+                if role.value in doc.metadata.get("access_roles", [])
+                and doc.metadata.get("collection") in allowed_collections
+            ]
+            return filtered[:top_k]
 
         try:
             llm = ChatGroq(
@@ -110,7 +109,8 @@ class LangChainHybridQAChain:
 
         try:
             question_answer_chain = create_stuff_documents_chain(llm, prompt)
-            hybrid_rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+            # Use filtered retriever instead of retriever with broken filter
+            hybrid_rag_chain = create_retrieval_chain(filtered_retriever, question_answer_chain)
             result: dict[str, Any] = hybrid_rag_chain.invoke({"input": question})
         except Exception as exc:
             logger.warning("LangChain retrieval invoke failed; falling back to classic hybrid flow: %s", exc)

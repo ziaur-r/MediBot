@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+import re
 
-from app.auth.roles import SQL_ALLOWED_ROLES, UserRole
+from app.auth.roles import ROLE_COLLECTIONS, SQL_ALLOWED_ROLES, UserRole
 from app.chains.sql_rag import SQLRAGChain
 from app.rerankers.interfaces import CrossEncoderReranker
 from app.retrievers.interfaces import HybridRetriever
@@ -36,6 +37,15 @@ class RAGService:
             question,
             type(self._llm).__name__,
         )
+        if self._is_greeting_intent(question):
+            logger.info("Routing question to greeting response")
+            return ChatResponse(
+                answer=self._welcome_message_for_role(user.role),
+                sources=[],
+                retrieval_type="greeting_welcome",
+                role=user.role,
+            )
+
         if self._is_sql_intent(question):
             logger.info("Routing question to SQL RAG")
             return self._answer_sql(question=question, role=user.role)
@@ -47,6 +57,37 @@ class RAGService:
         q = question.lower()
         sql_triggers = ["report", "analytics", "trend", "claims", "ticket", "count", "sql"]
         return any(trigger in q for trigger in sql_triggers)
+
+    @staticmethod
+    def _is_greeting_intent(question: str) -> bool:
+        tokens = re.findall(r"[a-z']+", question.lower())
+        if not tokens:
+            return False
+        greeting_tokens = {"hi", "hello", "hey", "greetings", "hola"}
+        return any(token in greeting_tokens for token in tokens[:6])
+
+    @staticmethod
+    def _welcome_message_for_role(role: UserRole) -> str:
+        role_capabilities: dict[UserRole, str] = {
+            UserRole.DOCTOR: "clinical guidance, treatment protocols, nursing references, and general policies",
+            UserRole.NURSE: "nursing procedures, medication administration, patient-care guidance, and general policies",
+            UserRole.BILLING_EXECUTIVE: "billing workflows, claim/RCM guidance, payer policies, and general hospital references",
+            UserRole.TECHNICIAN: "equipment manuals, maintenance procedures, troubleshooting steps, and general policies",
+            UserRole.ADMIN: "all available domains: clinical, nursing, billing, equipment, and general references",
+        }
+        collections = ", ".join(ROLE_COLLECTIONS[role])
+        sql_note = (
+            "You can also ask analytics/SQL questions."
+            if role in SQL_ALLOWED_ROLES
+            else "Analytical SQL questions are restricted for your role."
+        )
+        capabilities = role_capabilities.get(role, "your allowed knowledge-base documents")
+        return (
+            "Hello! Welcome to MediAssist. "
+            f"Based on your role ({role.value}), I can help with {capabilities}. "
+            f"Your accessible collections are: {collections}. "
+            f"{sql_note}"
+        )
 
     def _answer_sql(self, question: str, role: UserRole) -> ChatResponse:
         if role not in SQL_ALLOWED_ROLES:

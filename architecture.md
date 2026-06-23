@@ -1,3 +1,6 @@
+# Architecture Workflow Diagram
+
+```mermaid
 flowchart TD
     A["App needs vector store"] --> B["Call connect"]
 
@@ -53,3 +56,4 @@ flowchart TD
       R2 -- No --> R6["Return none"]
       R6 --> R7["Caller can use legacy or other path"]
     end
+```
