@@ -8,9 +8,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.database.sqlite_executor import SQLiteExecutor
 from app.db.vector_store import VectorStoreClient
-from app.embeddings.huggingface import HuggingFaceDenseEmbedder
 from app.ingestion.docling_ingestor import DoclingIngestor
-from langchain_qdrant import FastEmbedSparse
 
 
 def prepare_rag_pipeline() -> None:
@@ -18,18 +16,12 @@ def prepare_rag_pipeline() -> None:
     print(f"Qdrant path: {Path(settings.qdrant_ingest_path).resolve()}", flush=True)
     print(f"SQLite path: {Path(settings.sqlite_db_path).resolve()}", flush=True)
 
-    dense_embedder = HuggingFaceDenseEmbedder()
-    sparse_embedder = FastEmbedSparse(model_name="Qdrant/bm25", batch_size=32)
     try:
         vector_store = VectorStoreClient(
             data_root=Path(settings.knowledge_base_path),
             qdrant_path=Path(settings.qdrant_ingest_path),
             collection_name=settings.qdrant_collection_name,
-            dense_embedder=dense_embedder,
-            sparse_embedder=sparse_embedder,
             ingestor=DoclingIngestor(),
-            enable_qdrant=True,
-            reset_index_on_connect=True,
         )
         vector_store.connect()
     except Exception as exc:

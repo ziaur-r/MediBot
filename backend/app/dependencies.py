@@ -17,12 +17,12 @@ from app.core.index_status import is_index_ready, mark_index_not_ready, mark_ind
 from app.database.sqlite_executor import SQLiteExecutor
 from app.db.vector_store import VectorStoreClient
 from app.embeddings.huggingface import HuggingFaceDenseEmbedder
-from app.embeddings.simple import HashDenseEmbedder, TermFrequencySparseEmbedder
+from app.embeddings.simple import TermFrequencySparseEmbedder
 from app.ingestion.docling_ingestor import DoclingIngestor
-from app.rerankers.simple import LexicalCrossEncoderReranker
+from app.rerankers.cross_encoder import HuggingFaceCrossEncoderReranker
 from app.retrievers.hybrid import InMemoryHybridRetriever
 from app.services.langchain_hybrid_chain import LangChainHybridQAChain
-from app.services.llm_client import GroqLLMClient, StubLLMClient
+from app.services.llm_client import GroqLLMClient
 from app.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
@@ -38,13 +38,12 @@ def _is_index_ready() -> bool:
 
 def _make_embedders():
     """Factory for embedders based on test vs production."""
-    is_pytest = bool(os.getenv("PYTEST_CURRENT_TEST"))
-    dense = HashDenseEmbedder(dimension=96) if is_pytest else HuggingFaceDenseEmbedder()
+    dense = HuggingFaceDenseEmbedder()
     sparse = TermFrequencySparseEmbedder()
     return dense, sparse
 
 
-def _make_llm_client() -> GroqLLMClient | StubLLMClient:
+def _make_llm_client() -> GroqLLMClient:
     """Factory for LLM client with fallback."""
     groq_api_key = (os.getenv("GROQ_API_KEY") or settings.groq_api_key).strip()
     if groq_api_key:
@@ -56,7 +55,20 @@ def _make_llm_client() -> GroqLLMClient | StubLLMClient:
             )
         except Exception as exc:
             logger.warning("Groq init failed, falling back to stub: %s", exc)
-    return StubLLMClient()
+    return NotImplemented
+
+
+def _make_vector_store(ingestor: DoclingIngestor | None = None) -> VectorStoreClient:
+    """Construct, connect, and close a VectorStoreClient from current settings."""
+    vs = VectorStoreClient(
+        data_root=Path(settings.knowledge_base_path),
+        qdrant_path=Path(settings.qdrant_path),
+        collection_name=settings.qdrant_collection_name,
+        ingestor=ingestor,
+    )
+    vs.connect()
+    vs.close()
+    return vs
 
 
 # ── Build Phase (called once from admin endpoint) ───────────────────────────────
@@ -69,21 +81,7 @@ def build_rag_index() -> None:
     """
     logger.info("RAG build started")
     mark_index_not_ready(Path(settings.qdrant_path))
-
-    dense_embedder, sparse_embedder = _make_embedders()
-
-    vector_store = VectorStoreClient(
-        data_root=Path(settings.knowledge_base_path),
-        qdrant_path=Path(settings.qdrant_path),
-        collection_name=settings.qdrant_collection_name,
-        dense_embedder=dense_embedder,
-        sparse_embedder=sparse_embedder,
-        ingestor=DoclingIngestor(),              # expensive — only here
-        enable_qdrant=settings.enable_qdrant,
-    )
-    vector_store.connect()   # triggers ingestion + indexing
-    vector_store.close()     # release file lock; data persisted to disk
-
+    _make_vector_store(ingestor=DoclingIngestor())
     mark_index_ready(Path(settings.qdrant_path))
     logger.info("RAG build complete — index written to %s", settings.qdrant_path)
 
@@ -97,21 +95,10 @@ def _assemble_rag_service() -> RAGService:
     """
     dense_embedder, sparse_embedder = _make_embedders()
     llm_client = _make_llm_client()
-
-    vector_store = VectorStoreClient(
-        data_root=Path(settings.knowledge_base_path),
-        qdrant_path=Path(settings.qdrant_path),
-        collection_name=settings.qdrant_collection_name,
-        dense_embedder=dense_embedder,
-        sparse_embedder=sparse_embedder,
-        ingestor=None,                           # ← no ingestion on load
-        enable_qdrant=settings.enable_qdrant,
-    )
-    vector_store.connect()
-    vector_store.close()
+    vector_store = _make_vector_store()
 
     retriever = InMemoryHybridRetriever(vector_store, dense_embedder, sparse_embedder)
-    reranker = LexicalCrossEncoderReranker()
+    reranker = HuggingFaceCrossEncoderReranker(model_name="cross-encoder/ms-marco-MiniLM-L-6-v2")
     sqlite_executor = SQLiteExecutor(db_path=settings.sqlite_db_path)
     sql_chain = SQLRAGChain(llm_client=llm_client, sqlite_executor=sqlite_executor)
 

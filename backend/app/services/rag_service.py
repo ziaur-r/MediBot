@@ -125,8 +125,8 @@ class RAGService:
                     role=role,
                 )
 
-        chunks = self._retriever.retrieve(query=question, role=role, top_k=10)
-        reranked = self._reranker.rerank(query=question, chunks=chunks, top_n=3)
+        chunks = self._retriever.retrieve(query=question, role=role, top_k=50)
+        reranked = self._reranker.rerank(query=question, chunks=chunks, top_n=10)
         logger.info(
             "Hybrid retrieval complete raw_chunk_count=%s reranked_count=%s llm_client=%s",
             len(chunks),

@@ -55,36 +55,72 @@ class LangChainHybridQAChain:
         if self._vector_store.langchain_vectorstore is None:
             return None
 
-        try:           
-            from langchain.chains.retrieval import create_retrieval_chain
-            from langchain.chains.combine_documents import create_stuff_documents_chain
-            from langchain_core.prompts import ChatPromptTemplate
+        try:
             from langchain_groq import ChatGroq
-        except ImportError:
-            logger.info("LangChain/Groq imports unavailable at runtime; using fallback RAG path")
+            from langchain_classic.chains import create_retrieval_chain
+            from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+            from langchain_classic.retrievers import ContextualCompressionRetriever
+            from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
+            from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.runnables import RunnableLambda
+        except ImportError as e:
+            logger.info("LangChain imports unavailable at runtime: %s; using fallback RAG path", e)
             return None
 
         allowed_collections = set(ROLE_COLLECTIONS[role])
 
-        # LangChain's HYBRID retrieval mode doesn't properly support Qdrant filters.
-        # Workaround: retrieve MORE results without filter, then filter manually.
-        retriever = self._vector_store.langchain_vectorstore.as_retriever(
-            search_kwargs={"k": max(100, top_k * 5)}
+        # Base retriever: fetch more candidates for reranking (hybrid search with k=5)
+        broad_retriever = self._vector_store.langchain_vectorstore.as_retriever(
+            search_kwargs={"k": max(50, top_k)}
         )
-        
-        def filtered_retriever(query: str) -> list:
-            """Wrapper that retrieves documents and filters by role/collection."""
-            docs = retriever.invoke(query)
+
+        # Wrap RBAC filtering as a Runnable so it can be composed with LangChain components
+        def _filter_by_role(query: str) -> list:
+            docs = broad_retriever.invoke(query)
             filtered = [
                 doc for doc in docs
                 if role.value in doc.metadata.get("access_roles", [])
                 and doc.metadata.get("collection") in allowed_collections
             ]
-            return filtered[:top_k]
+            logger.debug(
+                "Retrieval: query=%r retrieved=%d filtered=%d role=%s",
+                query[:50],
+                len(docs),
+                len(filtered),
+                role.value,
+            )
+            return filtered
+
+        role_filtered_retriever = RunnableLambda(_filter_by_role)
+
+        # Cross-encoder reranker: score candidates and keep top_n
+        try:
+            cross_encoder = HuggingFaceCrossEncoder(
+                model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
+            )
+            reranker = CrossEncoderReranker(
+                model=cross_encoder,
+                top_n=10,
+            )
+            logger.info("Cross-encoder reranker ready: cross-encoder/ms-marco-MiniLM-L-6-v2")
+        except Exception as exc:
+            logger.warning("Cross-encoder initialization failed; using fallback retriever: %s", exc)
+            reranker = None
+
+        # Contextual compression retriever: applies reranking to filter results
+        if reranker is not None:
+            final_retriever = ContextualCompressionRetriever(
+                base_compressor=reranker,
+                base_retriever=role_filtered_retriever,
+            )
+            logger.info("Retrieval pipeline: Hybrid search → Top-10 candidates → Cross-encoder reranker → Top-3")
+        else:
+            final_retriever = role_filtered_retriever
 
         try:
             llm = ChatGroq(
-                api_key=self._groq_api_key,
+                groq_api_key=self._groq_api_key,
                 model=self._groq_model,
                 temperature=self._temperature,
                 max_tokens=None,
@@ -98,7 +134,8 @@ class LangChainHybridQAChain:
 
         system_prompt = (
             "You are MediBot assistant. Use only the provided context. "
-            "If context is insufficient, say that clearly and do not fabricate details."
+            "If context is insufficient, say that clearly and do not fabricate details.\n\n"
+            "Context:\n{context}"
         )
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -109,9 +146,8 @@ class LangChainHybridQAChain:
 
         try:
             question_answer_chain = create_stuff_documents_chain(llm, prompt)
-            # Use filtered retriever instead of retriever with broken filter
-            hybrid_rag_chain = create_retrieval_chain(filtered_retriever, question_answer_chain)
-            result: dict[str, Any] = hybrid_rag_chain.invoke({"input": question})
+            retrieval_chain = create_retrieval_chain(final_retriever, question_answer_chain)
+            result: dict[str, Any] = retrieval_chain.invoke({"input": question})
         except Exception as exc:
             logger.warning("LangChain retrieval invoke failed; falling back to classic hybrid flow: %s", exc)
             return None
