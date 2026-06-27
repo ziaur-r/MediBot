@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from app.auth.roles import UserRole
-from app.db.vector_store import VectorStoreClient
-from app.embeddings.simple import HashDenseEmbedder, TermFrequencySparseEmbedder
-from app.retrievers.hybrid import InMemoryHybridRetriever
+from app.retrieval.vector_store import VectorStoreClient
+from app.retrieval.embeddings.simple import HashDenseEmbedder, TermFrequencySparseEmbedder
+from app.retrieval.retrievers.hybrid import InMemoryHybridRetriever
 
 
 def test_retriever_applies_role_filter() -> None:

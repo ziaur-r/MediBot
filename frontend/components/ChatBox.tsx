@@ -108,6 +108,7 @@ export default function ChatBox() {
   const [info, setInfo] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const reindexPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -116,6 +117,13 @@ export default function ChatBox() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (reindexPollRef.current) clearInterval(reindexPollRef.current);
+    };
+  }, []);
 
   const refreshAdminStatus = async (accessToken: string) => {
     setStatusLoading(true);
@@ -135,6 +143,8 @@ export default function ChatBox() {
 
   const handleReindex = async () => {
     if (!token) return;
+    // Cancel any in-flight poll before starting a new one
+    if (reindexPollRef.current) clearInterval(reindexPollRef.current);
     setReindexLoading(true);
     setError("");
     setInfo("");
@@ -146,9 +156,27 @@ export default function ChatBox() {
       setError(
         err instanceof Error ? err.message : "Failed to start re-indexing."
       );
-    } finally {
       setReindexLoading(false);
+      return;
     }
+    setReindexLoading(false);
+
+    // Poll until the backend clears build_in_progress
+    const pollToken = token;
+    reindexPollRef.current = setInterval(async () => {
+      try {
+        const status = await getAdminIndexStatus(pollToken);
+        setIndexStatus(status);
+        if (!status.build_in_progress) {
+          clearInterval(reindexPollRef.current!);
+          reindexPollRef.current = null;
+          setInfo("Re-indexing complete.");
+        }
+      } catch {
+        clearInterval(reindexPollRef.current!);
+        reindexPollRef.current = null;
+      }
+    }, 3000);
   };
 
   const handleLogin = async () => {
@@ -424,13 +452,13 @@ export default function ChatBox() {
               <div className="response-section">
                 <h4>Response Details</h4>
                 <p>
-                  <strong>Retrieval Type:</strong> {lastResponse.retrieval_type}
+                  <strong>Retrieval Type:</strong> {lastResponse?.retrieval_type}
                 </p>
-                {lastResponse.sources.length > 0 && (
+                {(lastResponse?.sources.length ?? 0) > 0 && (
                   <div>
                     <strong>Sources:</strong>
                     <ul className="sources-list">
-                      {lastResponse.sources.map((source, idx) => (
+                      {lastResponse?.sources.map((source, idx) => (
                         <li key={idx}>
                           <strong>{source.source_document}</strong> •{" "}
                           {source.collection} • {source.section_title}

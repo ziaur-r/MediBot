@@ -11,19 +11,19 @@ _BACKEND_ROOT = Path(__file__).resolve().parents[1]
 # Load backend/.env.local regardless of current working directory.
 load_dotenv(dotenv_path=_BACKEND_ROOT / ".env")
 
-from app.chains.sql_rag import SQLRAGChain
+from app.generation.chains.sql_rag import SQLRAGChain
 from app.core.config import settings
 from app.core.index_status import is_index_ready, mark_index_not_ready, mark_index_ready
-from app.database.sqlite_executor import SQLiteExecutor
-from app.db.vector_store import VectorStoreClient
-from app.embeddings.huggingface import HuggingFaceDenseEmbedder
-from app.embeddings.simple import TermFrequencySparseEmbedder
+from app.generation.chains.sqlite_executor import SQLiteExecutor
+from app.ingestion.vector_store import VectorStoreClient
+from app.retrieval.embeddings.huggingface import HuggingFaceDenseEmbedder
+from app.retrieval.embeddings.simple import TermFrequencySparseEmbedder
 from app.ingestion.docling_ingestor import DoclingIngestor
-from app.rerankers.cross_encoder import HuggingFaceCrossEncoderReranker
-from app.retrievers.hybrid import InMemoryHybridRetriever
-from app.services.langchain_hybrid_chain import LangChainHybridQAChain
-from app.services.llm_client import GroqLLMClient
-from app.services.rag_service import RAGService
+from app.retrieval.rerankers.cross_encoder import HuggingFaceCrossEncoderReranker
+from app.retrieval.retrievers.hybrid import InMemoryHybridRetriever
+from app.generation.langchain_hybrid_chain import LangChainHybridQAChain
+from app.generation.llm_client import GroqLLMClient
+from app.generation.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
 

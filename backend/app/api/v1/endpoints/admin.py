@@ -6,7 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from app.auth.roles import UserRole
 from app.auth.security import get_current_user
 from app.dependencies import _is_index_ready, build_rag_index, _assemble_rag_service
-from app.schemas.user import AuthenticatedUser
+from app.models.user import AuthenticatedUser
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 logger = logging.getLogger(__name__)

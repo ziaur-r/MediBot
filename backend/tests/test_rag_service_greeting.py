@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from app.auth.roles import UserRole
 from app.models.chunk import Chunk, ChunkMetadata
-from app.rerankers.interfaces import RerankedChunk
+from app.retrieval.rerankers.interfaces import RerankedChunk
 from app.schemas.user import AuthenticatedUser
-from app.services.rag_service import RAGService
+from app.generation.rag_service import RAGService
 
 
 class DummyRetriever:

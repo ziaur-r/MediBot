@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.roles import ROLE_COLLECTIONS, UserRole
 from app.auth.security import get_current_user
-from app.schemas.collection import CollectionsResponse
-from app.schemas.user import AuthenticatedUser
+from app.models.collection import CollectionsResponse
+from app.models.user import AuthenticatedUser
 
 router = APIRouter()
 

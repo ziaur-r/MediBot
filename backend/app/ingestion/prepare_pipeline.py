@@ -6,8 +6,8 @@ _ssl_fix.apply()
 from pathlib import Path
 
 from app.core.config import settings
-from app.database.sqlite_executor import SQLiteExecutor
-from app.db.vector_store import VectorStoreClient
+from backend.app.generation.chains.sqlite_executor import SQLiteExecutor
+from app.retrieval.vector_store import VectorStoreClient
 from app.ingestion.docling_ingestor import DoclingIngestor
 
 

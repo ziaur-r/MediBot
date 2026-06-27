@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends
 
 from app.auth.security import get_current_user
 from app.dependencies import get_rag_service
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.user import AuthenticatedUser
-from app.services.rag_service import RAGService
+from app.models.chat import ChatRequest, ChatResponse
+from app.models.user import AuthenticatedUser
+from app.generation.rag_service import RAGService
 
 router = APIRouter()
 

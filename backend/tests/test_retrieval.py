@@ -6,9 +6,9 @@ logging.basicConfig(level=logging.INFO, format='%(name)s: %(message)s')
 from pathlib import Path
 from app.core.config import settings
 from app.auth.roles import UserRole
-from app.embeddings.simple import HashDenseEmbedder, TermFrequencySparseEmbedder
-from app.db.vector_store import VectorStoreClient
-from app.retrievers.hybrid import InMemoryHybridRetriever
+from app.retrieval.embeddings.simple import HashDenseEmbedder, TermFrequencySparseEmbedder
+from app.retrieval.vector_store import VectorStoreClient
+from app.retrieval.retrievers.hybrid import InMemoryHybridRetriever
 
 # Load index
 print("\n=== Loading Vector Store ===")

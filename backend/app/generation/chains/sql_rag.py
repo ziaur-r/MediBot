@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from app.chains.sql_cleaner import extract_select_sql
-from app.database.sqlite_executor import SQLiteExecutor
-from app.services.llm_client import LLMClient
+from app.generation.chains.sql_cleaner import extract_select_sql
+from app.generation.chains.sqlite_executor import SQLiteExecutor
+from app.generation.llm_client import LLMClient
 
 
 class SQLRAGChain:

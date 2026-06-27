@@ -1,6 +1,6 @@
 import pytest
 
-from app.chains.sql_cleaner import SQLValidationError, extract_select_sql
+from app.generation.chains.sql_cleaner import SQLValidationError, extract_select_sql
 
 
 def test_extract_select_from_markdown_fence() -> None:

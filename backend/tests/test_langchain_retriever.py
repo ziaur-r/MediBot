@@ -2,9 +2,9 @@
 """Test LangChain retriever without filter."""
 from pathlib import Path
 from app.core.config import settings
-from app.embeddings.huggingface import HuggingFaceDenseEmbedder
-from app.embeddings.simple import TermFrequencySparseEmbedder
-from app.db.vector_store import VectorStoreClient
+from app.retrieval.embeddings.huggingface import HuggingFaceDenseEmbedder
+from app.retrieval.embeddings.simple import TermFrequencySparseEmbedder
+from app.retrieval.vector_store import VectorStoreClient
 
 # Load with correct embedders
 dense = HuggingFaceDenseEmbedder()

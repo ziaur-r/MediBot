@@ -12,7 +12,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.auth.roles import UserRole
 from app.core.config import settings
-from app.schemas.user import AuthenticatedUser
+from app.models.user import AuthenticatedUser
 
 bearer_scheme = HTTPBearer(auto_error=False)
 

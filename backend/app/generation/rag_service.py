@@ -4,13 +4,13 @@ import logging
 import re
 
 from app.auth.roles import ROLE_COLLECTIONS, SQL_ALLOWED_ROLES, UserRole
-from app.chains.sql_rag import SQLRAGChain
-from app.rerankers.interfaces import CrossEncoderReranker
-from app.retrievers.interfaces import HybridRetriever
-from app.schemas.chat import ChatResponse, SourceCitation
-from app.schemas.user import AuthenticatedUser
-from app.services.langchain_hybrid_chain import LangChainHybridQAChain
-from app.services.llm_client import LLMClient
+from app.generation.chains.sql_rag import SQLRAGChain
+from app.retrieval.rerankers.interfaces import CrossEncoderReranker
+from app.retrieval.retrievers.interfaces import HybridRetriever
+from app.models.chat import ChatResponse, SourceCitation
+from app.models.user import AuthenticatedUser
+from app.generation.langchain_hybrid_chain import LangChainHybridQAChain
+from app.generation.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ class RAGService:
             question,
             type(self._llm).__name__,
         )
+        # TODO - add more sophisticated intent detection (e.g. using semantic-router)
         if self._is_greeting_intent(question):
             logger.info("Routing question to greeting response")
             return ChatResponse(
@@ -55,7 +56,7 @@ class RAGService:
     @staticmethod
     def _is_sql_intent(question: str) -> bool:
         q = question.lower()
-        sql_triggers = ["report", "analytics", "trend", "claims", "ticket", "count", "sql"]
+        sql_triggers = ["total", "status", "report", "analytics", "trend", "claims", "claims", "ticket", "count", "sql"]
         return any(trigger in q for trigger in sql_triggers)
 
     @staticmethod

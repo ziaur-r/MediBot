@@ -1,5 +1,5 @@
 from app.models.chunk import Chunk, ChunkMetadata
-from app.rerankers.cross_encoder import HuggingFaceCrossEncoderReranker
+from app.retrieval.rerankers.cross_encoder import HuggingFaceCrossEncoderReranker
 
 
 def test_cross_encoder_reranker_initialization() -> None:

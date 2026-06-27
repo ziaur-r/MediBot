@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.db.vector_store import VectorStoreClient
+from app.retrieval.vector_store import VectorStoreClient
 
 
 def test_chunk_metadata_fields_exist() -> None:

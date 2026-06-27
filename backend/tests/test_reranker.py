@@ -1,5 +1,5 @@
 from app.models.chunk import Chunk, ChunkMetadata
-from app.rerankers.simple import LexicalCrossEncoderReranker
+from app.retrieval.rerankers.simple import LexicalCrossEncoderReranker
 
 
 def test_reranker_prefers_high_overlap() -> None:

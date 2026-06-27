@@ -4,7 +4,7 @@ import math
 import re
 from collections import Counter
 
-from app.embeddings.interfaces import DenseEmbedder, SparseEmbedder
+from app.retrieval.embeddings.interfaces import DenseEmbedder, SparseEmbedder
 
 _TOKEN_RE = re.compile(r"[a-zA-Z0-9_]+")
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.auth.demo_users import DEMO_USERS
 from app.auth.security import create_access_token
-from app.schemas.auth import LoginRequest, LoginResponse
+from app.models.auth import LoginRequest, LoginResponse
 
 router = APIRouter()
 

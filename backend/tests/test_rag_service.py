@@ -13,7 +13,7 @@ from app.retrieval.rerankers.simple import LexicalCrossEncoderReranker
 from app.generation.llm_client import StubLLMClient
 from app.generation.rag_service import RAGService
 from app.generation.chains.sql_rag import SQLRAGChain
-from backend.app.generation.chains.sqlite_executor import SQLiteExecutor
+from app.database.sqlite_executor import SQLiteExecutor
 
 # Build RAG service
 print("=== Building RAG Service ===")

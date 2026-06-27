@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from app.embeddings.interfaces import DenseEmbedder
+from app.retrieval.embeddings.interfaces import DenseEmbedder
 
 
 class HuggingFaceDenseEmbedder(DenseEmbedder):

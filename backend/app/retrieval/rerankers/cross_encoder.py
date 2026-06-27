@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from app.models.chunk import Chunk
-from app.rerankers.interfaces import RerankedChunk
+from app.retrieval.rerankers.interfaces import RerankedChunk
 
 logger = logging.getLogger(__name__)
 
@@ -13,48 +13,22 @@ class HuggingFaceCrossEncoderReranker:
     """Cross-encoder reranker using HuggingFace sentence-transformers."""
 
     def __init__(self, model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2") -> None:
-        """Initialize the cross-encoder reranker.
-        
-        Args:
-            model_name: HuggingFace model identifier for the cross-encoder.
-                       Default: "cross-encoder/ms-marco-MiniLM-L-6-v2"
-        """
         self._model_name = model_name
         self._model: Any = None
-        self._initialized = False
-
-    def _ensure_initialized(self) -> None:
-        """Lazy initialize the cross-encoder model."""
-        if self._initialized:
-            return
 
         try:
             from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-            
+
             self._model = HuggingFaceCrossEncoder(model_name=self._model_name)
-            self._initialized = True
-            logger.info("✅ Cross-encoder reranker initialized with model: %s", self._model_name)
+            logger.info("Cross-encoder reranker initialized: %s", self._model_name)
         except ImportError as exc:
             logger.warning(
-                "HuggingFaceCrossEncoder unavailable; falling back to lexical reranking: %s", 
-                exc
+                "HuggingFaceCrossEncoder unavailable; falling back to lexical reranking: %s",
+                exc,
             )
-            self._model = None
-            self._initialized = True
 
     def rerank(self, query: str, chunks: list[Chunk], top_n: int = 3) -> list[RerankedChunk]:
-        """Rerank chunks using cross-encoder model.
-        
-        Args:
-            query: The query string.
-            chunks: List of chunks to rerank.
-            top_n: Number of top chunks to return after reranking.
-        
-        Returns:
-            List of reranked chunks sorted by relevance score.
-        """
-        self._ensure_initialized()
-
+        """Rerank chunks using cross-encoder model."""
         if not chunks:
             return []
 

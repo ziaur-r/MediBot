@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from hashlib import sha1
 
 from app.auth.roles import ROLE_COLLECTIONS, UserRole
-from app.db.vector_store import VectorStoreClient
-from app.embeddings.interfaces import DenseEmbedder, SparseEmbedder
+from app.ingestion.vector_store import VectorStoreClient
+from app.retrieval.embeddings.interfaces import DenseEmbedder, SparseEmbedder
 from app.models.chunk import Chunk
 
 

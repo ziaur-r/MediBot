@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.models.chunk import Chunk
-from app.rerankers.interfaces import RerankedChunk
+from app.retrieval.rerankers.interfaces import RerankedChunk
 
 
 class LexicalCrossEncoderReranker:
