@@ -27,6 +27,20 @@ from app.generation.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
 
+# ── Shared build-in-progress flag (used by admin endpoint + lifespan) ────────
+
+_build_in_progress: bool = False
+
+
+def is_build_in_progress() -> bool:
+    return _build_in_progress
+
+
+def set_build_in_progress(value: bool) -> None:
+    global _build_in_progress
+    _build_in_progress = value
+
+
 # ── Status Check ──────────────────────────────────────────────────────────────
 
 def _is_index_ready() -> bool:

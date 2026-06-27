@@ -14,7 +14,7 @@ _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 class DoclingIngestor:
     def ingest_corpus(self, data_root: Path) -> list[Chunk]:
         chunks: list[Chunk] = []
-        for file_path in sorted(data_root.rglob("icu_nursing_procedures.pdf")):
+        for file_path in sorted(data_root.rglob("*")):
             if not file_path.is_file():
                 continue
             if file_path.suffix.lower() not in {".md", ".pdf"}:
