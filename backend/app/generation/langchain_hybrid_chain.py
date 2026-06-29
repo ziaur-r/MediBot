@@ -58,19 +58,10 @@ class LangChainHybridQAChain:
             )
         except Exception as exc:
             logger.warning("LangChain ChatGroq init failed: %s", exc)
-            return None
-
-        # Pre-build prompt template once
-        # system_prompt = (
-        #     "You are MediBot assistant. Use only the provided context. "
-        #     "In case user doesn't ask question but give reference to some text/keywords, you should answer based on the context provided. "
-        #     "Only reply based on the context which is relevant to query and don't make less or more information. "
-        #     "If context is insufficient, say that clearly and do not fabricate details.\n\n"
-        #     "Context:\n{context}"
-        # )
+            return None     
 
         system_prompt = """
-            You are MediBot, the advanced intelligent assistant for MediAssist Health Network.
+            You are an intelligent assistant for Healthcare Network.
             Your task is to answer the user's medical or hospital-related question using ONLY the provided verified context.
             If the context does not contain enough information to answer the question, state that you do not know. Do not hallucinate.
 

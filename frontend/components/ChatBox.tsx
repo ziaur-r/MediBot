@@ -272,7 +272,7 @@ export default function ChatBox() {
           <div className="sidebar-header">
             <span className="sidebar-logo-icon">🏥</span>
             <div>
-              <h1>MediAssist</h1>
+              <h1>MediBot</h1>
               <p>Enterprise Medical AI</p>
             </div>
           </div>
@@ -401,7 +401,7 @@ export default function ChatBox() {
                 >
                   <div>
                     <h2 style={{ margin: "0 0 0.5rem" }}>
-                      Welcome to MediAssist
+                      Welcome to MediBot
                     </h2>
                     <p>
                       Ask medical policy, clinical, or analytical questions

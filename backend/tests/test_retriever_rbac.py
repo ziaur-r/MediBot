@@ -7,7 +7,7 @@ from app.retrieval.retrievers.hybrid import InMemoryHybridRetriever
 
 
 def test_retriever_applies_role_filter() -> None:
-    store = VectorStoreClient(data_root=Path("mediassist_data"), enable_qdrant=False)
+    store = VectorStoreClient(data_root=Path("knowledge_data"), enable_qdrant=False)
     store.connect()
 
     retriever = InMemoryHybridRetriever(

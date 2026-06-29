@@ -1,6 +1,6 @@
-# MediAssist — Enterprise Medical AI Assistant
+# MediBot — Enterprise Medical AI Assistant
 
-MediAssist is a **Role-Based Access Control (RBAC) RAG chatbot** for MediAssist Health Network staff. It answers queries about clinical protocols, nursing procedures, billing workflows, and equipment manuals — enforcing data access boundaries per user role at every layer of the retrieval pipeline.
+MediBot is a **Role-Based Access Control (RBAC) RAG chatbot** for Healthcare Network staff. It answers queries about clinical protocols, nursing procedures, billing workflows, and equipment manuals — enforcing data access boundaries per user role at every layer of the retrieval pipeline.
 
 ---
 
@@ -85,7 +85,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    KB[(mediassist_data/\nclinical  nursing\nbilling  equipment\ngeneral)]
+    KB[(knowledge_data/\nclinical  nursing\nbilling  equipment\ngeneral)]
     KB --> DI[DoclingIngestor\nHybridChunker max_tokens=512]
     DI --> CH[Chunk objects\n+ metadata\n+ access_roles]
     CH --> DE[HuggingFace Dense Embedder\nall-MiniLM-L6-v2]
@@ -156,13 +156,13 @@ MediBot/
 │   │   │   └── retrievers/        # InMemoryHybridRetriever
 │   │   ├── dependencies.py        # FastAPI DI wiring, RAGService assembly
 │   │   └── main.py                # App factory + lifespan
-│   ├── mediassist_data/           # Knowledge base documents
+│   ├── knowledge_data/           # Knowledge base documents
 │   │   ├── billing/
 │   │   ├── clinical/
 │   │   ├── equipment/
 │   │   ├── general/
 │   │   ├── nursing/
-│   │   └── db/                    # mediassist.db (SQLite)
+│   │   └── db/                    # MediBot.db (SQLite)
 │   ├── tests/                     # pytest test suite
 │   └── requirements.txt
 └── frontend/
@@ -210,9 +210,9 @@ GROQ_MODEL=openai/gpt-oss-20b
 GROQ_TEMPERATURE=0.1
 
 # Paths — defaults resolve relative to the backend/ folder
-KNOWLEDGE_BASE_PATH=   # defaults to backend/mediassist_data/
+KNOWLEDGE_BASE_PATH=   # defaults to backend/knowledge_data/
 QDRANT_PATH=           # defaults to backend/.qdrant_ingest/
-SQLITE_DB_PATH=        # defaults to backend/mediassist_data/db/mediassist.db
+SQLITE_DB_PATH=        # defaults to backend/knowledge_data/db/MediBot.db
 
 # CORS — comma-separated or JSON array
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
@@ -261,7 +261,7 @@ The UI will be available at `http://localhost:3000`.
 
 ### Document Layout
 
-Place source documents under `backend/mediassist_data/` in the appropriate collection sub-folder:
+Place source documents under `backend/knowledge_data/` in the appropriate collection sub-folder:
 
 | Folder | Collection name | Accessible by |
 |---|---|---|

@@ -4,7 +4,7 @@ from app.retrieval.vector_store import VectorStoreClient
 
 
 def test_chunk_metadata_fields_exist() -> None:
-    store = VectorStoreClient(data_root=Path("mediassist_data"), enable_qdrant=False)
+    store = VectorStoreClient(data_root=Path("knowledge_data"), enable_qdrant=False)
     store.connect()
 
     chunks = store.get_chunks()

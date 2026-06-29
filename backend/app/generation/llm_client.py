@@ -54,7 +54,7 @@ class GroqLLMClient:
                 {
                     "role": "system",
                     "content": (
-                        "You are MediBot assistant. Use only the supplied prompt context and "
+                        "You are an Healthcare assistant. Use only the supplied prompt context and "
                         "be concise and factual."
                     ),
                 },

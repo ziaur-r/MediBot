@@ -84,7 +84,7 @@ class RAGService:
         )
         capabilities = role_capabilities.get(role, "your allowed knowledge-base documents")
         return (
-            "Hello! Welcome to MediAssist. "
+            "Hello! Welcome to MediBot. "
             f"Based on your role ({role.value}), I can help with {capabilities}. "
             f"Your accessible collections are: {collections}. "
             f"{sql_note}"

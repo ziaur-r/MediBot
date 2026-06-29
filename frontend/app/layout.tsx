@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MediAssist - Enterprise Medical Assistant",
+  title: "MediBot - Enterprise Medical Assistant",
   description: "Enterprise medical assistant with RBAC-enforced hybrid retrieval and analytics",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };

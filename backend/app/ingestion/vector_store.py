@@ -18,7 +18,7 @@ class VectorStoreClient:
         self,
         data_root: Path,
         qdrant_path: Path | None = None,
-        collection_name: str = "mediassist_kb",
+        collection_name: str = "MediBot_kb",
         ingestor: DoclingIngestor | None = None,
     ) -> None:
         self._data_root = data_root
